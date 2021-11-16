@@ -32,7 +32,7 @@ public class ServicoProcessarArquivos {
         lstArquivos.forEach((arquivo) -> {
 
             String caminhoArquivo = dirEntrada.toString() + File.separator + arquivo;
-            log.info("Processando arquivo: {}", caminhoArquivo);
+            log.info("Processando arquivo: {}...", caminhoArquivo);
 
             List<PedidoModel> pedidos = servicoLerArquivo.executar(caminhoArquivo);
             if (pedidos.isEmpty()) {
