@@ -1,8 +1,9 @@
 package com.avanade.aplicacao.model;
 
+import lombok.Builder;
 import lombok.Data;
 
-@Data
+@Data @Builder
 public class ClienteModel {
 
     private Integer codigoCliente;
