@@ -2,6 +2,7 @@ package com.avanade.aplicacao.utils;
 
 import com.avanade.aplicacao.model.ClienteModel;
 import com.avanade.aplicacao.model.PedidoModel;
+import com.avanade.aplicacao.model.ItemPedidoModel;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ import java.util.Optional;
 public final class PedidoUtils {
 
     public static final int TAMANHO_CAMPOS_PEDIDO = 7;
+    public static final int TAMANHO_CAMPOS_ITEMPEDIDO = 6;
     private static final SimpleDateFormat SDF;
 
     static {
@@ -43,6 +45,16 @@ public final class PedidoUtils {
         }
     }
 
+    static class Idx {
+        private int idx;
+        Idx() {
+            idx = 1;
+        }
+        public int inc() {
+            return idx++;
+        }
+    }
+
     private static Optional<ClienteModel> criarCliente(Idx idx, String...campos) {
         try {
           ClienteModel cliente = ClienteModel.builder()
@@ -56,15 +68,35 @@ public final class PedidoUtils {
         }
     }
 
-    static class Idx {
-        private int idx;
-
-        Idx() {
-            idx = 1;
+    public static Optional<ItemPedidoModel> criarItemPedido(String... campos) {
+        if (campos.length != TAMANHO_CAMPOS_ITEMPEDIDO) {
+            return Optional.empty();
         }
 
+        try {
+            IdxItem idxitem = new IdxItem();
+            ItemPedidoModel itempedido = ItemPedidoModel.builder()
+                    .codigoProduto(Integer.valueOf(campos[idxitem.inc()]))
+                    .quantidade(new BigDecimal(campos[idxitem.inc()]))
+                    .nomeProduto(campos[idxitem.inc()])
+                    .valorUnitario(new BigDecimal(campos[idxitem.inc()]))
+                    .valor(new BigDecimal(campos[idxitem.inc()]))
+                    .build();
+            return Optional.of(itempedido);
+        }
+        catch (Exception ex) {
+            log.error("Falha ao criar Item de Pedido - Campos: {}", campos, ex);
+            return Optional.empty();
+        }
+    }
+
+    static class IdxItem {
+        private int idxitem;
+        IdxItem() {
+            idxitem = 1;
+        }
         public int inc() {
-            return idx++;
+            return idxitem++;
         }
     }
 

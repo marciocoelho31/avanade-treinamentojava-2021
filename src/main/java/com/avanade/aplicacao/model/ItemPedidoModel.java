@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 @Data @Builder
 public class ItemPedidoModel {
 
-    private Integer numero;
     private Integer codigoProduto;
     private String nomeProduto;
     private BigDecimal quantidade;

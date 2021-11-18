@@ -1,5 +1,6 @@
 package com.avanade.aplicacao.servicos;
 
+import com.avanade.aplicacao.model.ItemPedidoModel;
 import com.avanade.aplicacao.model.PedidoModel;
 import com.avanade.aplicacao.utils.PedidoUtils;
 import lombok.Builder;
@@ -56,13 +57,15 @@ public class ServicoLerArquivo {
                     continue;
                 }
 
-                pedidoCorrente =pedidoOpt.get();
+                pedidoCorrente = pedidoOpt.get();
                 pedidos.add(pedidoCorrente);
                 continue;
-            }
-            else if (campos[0].equals("D")) {
+            } else if (campos[0].equals("D")) {
 
                 // TODO Criar lista de itens do pedido
+                Optional<ItemPedidoModel> itempedidoOpt = PedidoUtils.criarItemPedido(campos);
+
+                continue;
 
             }
 
