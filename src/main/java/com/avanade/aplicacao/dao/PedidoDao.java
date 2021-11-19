@@ -28,8 +28,40 @@ public class PedidoDao {
         return DriverManager.getConnection(url, props);
     }
 
-    public PedidoModel inserir(PedidoModel pedido) {
+    public PedidoModel inserir(PedidoModel pedido) throws SQLException {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(" insert into pedidos ");
+        sb.append("      ( codigo ");
+        sb.append("      , codigo_cliente ");
+        sb.append("      , valor_total ");
+        sb.append("      , numero_cartao ");
+        sb.append("      , data ) ");
+        sb.append(" values ");
+        sb.append("      ( ? ");
+        sb.append("      , ? ");
+        sb.append("      , ? ");
+        sb.append("      , ? ");
+        sb.append("      , ? ) ");
+
+        int idx = 1;
+        PreparedStatement pst = connection.prepareStatement(sb.toString());
+        pst.setInt(idx++, pedido.getCodigo());
+        pst.setInt(idx++, pedido.getCliente().getCodigoCliente());
+        pst.setBigDecimal(idx++, pedido.getValorTotal());
+        pst.setString(idx++, pedido.getNumeroCartao());
+        pst.setDate(idx, (java.sql.Date) pedido.getData());
+
+        // TODO se o pedido ja existir, chamar o metodo 'atualizar' abaixo
+        // if antes consultando pelo codigo
+
+        int qtdLinhas = pst.executeUpdate();
+        if (qtdLinhas == 0) {
+            throw new SQLException("Nenhum registro foi inserido para o pedido []");
+        }
+
         return pedido;
+
     }
 
     public PedidoModel atualizar(PedidoModel pedido) {
@@ -45,16 +77,23 @@ public class PedidoDao {
         sb.append("      , numero_cartao ");
         sb.append("      , data ");
         sb.append(" from pedidos ");
-        sb.append(" where codigo = " + codigoQry);
+        sb.append(" where codigo = ?");
+
+        // TODO criar tabela clientes e relacionar com o pedido, e fazer um JOIN acima pra trazer o cliente
+
+        int idx = 1;
+        PreparedStatement pst = connection.prepareStatement(sb.toString());
+        pst.setInt(idx, codigoQry);
+        // pode usar com ++ para indicar outros parametros
 
         Statement st = connection.createStatement();
-        ResultSet rs = st.executeQuery(sb.toString());
+        ResultSet rs = pst.executeQuery();
 
         if (!rs.next()) {
             return Optional.empty();
         }
 
-        int idx = 1;
+        idx = 1;
         Integer codigo = rs.getInt(idx++);
         Integer codigoCliente = rs.getInt(idx++);
         BigDecimal valorTotal = rs.getBigDecimal(idx++);
