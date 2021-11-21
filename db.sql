@@ -35,3 +35,31 @@ alter table ItensPedidos
 ;
 
 insert into ItensPedidos values (1, 1, 50, 'PASTA DE DENTE', 2.00, 100.00);
+
+
+CREATE TABLE Clientes (
+  codigo         int           not null
+, nome           varchar(100)
+)
+;
+
+alter table Clientes
+  add constraint pk_clientes_codigo
+  primary key(codigo)
+;
+
+insert into Clientes values (803, 'MARCIO COELHO');
+insert into Clientes values (567, 'JOAO DA SILVA');
+insert into Clientes values (9786, 'CATHERINE COSTA');
+insert into Clientes values (1000, 'MARCIA TONDELLO');
+
+
+
+
+
+CREATE TABLE Log (
+  codigo         SERIAL PRIMARY KEY
+, data_hora      time  not null
+, mensagem       text
+)
+;

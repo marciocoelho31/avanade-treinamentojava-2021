@@ -15,10 +15,12 @@ public class PedidoDao {
 
     private Connection connection;
     private final ItemPedidoDao itemPedidoDao;
+    private final LogDao logDao;
 
     public PedidoDao() throws SQLException {
         connection = criarConexao();
         itemPedidoDao = new ItemPedidoDao();
+        logDao = new LogDao();
         log.info("Conexão executada com sucesso");
     }
 
@@ -33,27 +35,30 @@ public class PedidoDao {
     public PedidoModel inserir(PedidoModel pedido) throws SQLException {
 
         Optional<PedidoModel> pedidoQry = buscaPorCodigo(pedido.getCodigo());
-        if (!pedidoQry.isEmpty()) {
+        if (pedidoQry.isPresent()) {
             atualizar(pedido);
+
+            String mensagem = "Tentativa de inclusão do pedido " + pedido.getCodigo() + " já existente, dados atualizados";
+            logDao.inserir(mensagem);
+
             return pedido;
         }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(" insert into Pedidos ");
-        sb.append("      ( codigo ");
-        sb.append("      , codigo_cliente ");
-        sb.append("      , valor_total ");
-        sb.append("      , numero_cartao ");
-        sb.append("      , data ) ");
-        sb.append(" values ");
-        sb.append("      ( ? ");
-        sb.append("      , ? ");
-        sb.append("      , ? ");
-        sb.append("      , ? ");
-        sb.append("      , ? ) ");
+        String sb = " insert into Pedidos " +
+                "      ( codigo " +
+                "      , codigo_cliente " +
+                "      , valor_total " +
+                "      , numero_cartao " +
+                "      , data ) " +
+                " values " +
+                "      ( ? " +
+                "      , ? " +
+                "      , ? " +
+                "      , ? " +
+                "      , ? ) ";
 
         int idx = 1;
-        PreparedStatement pst = connection.prepareStatement(sb.toString());
+        PreparedStatement pst = connection.prepareStatement(sb);
         pst.setInt(idx++, pedido.getCodigo());
         pst.setInt(idx++, pedido.getCliente().getCodigoCliente());
         pst.setBigDecimal(idx++, pedido.getValorTotal());
@@ -69,8 +74,13 @@ public class PedidoDao {
             try {
                 itemPedidoDao.inserir(itemPedido);
             } catch (SQLException ex) {
-                log.error("Falha ao inserir item do pedido no banco [{}]", itemPedido, ex);
-                // TODO Alimentar lista/log de erro
+                String mensagemErro = "Falha ao inserir item do pedido no banco [" + itemPedido + "]";
+                log.error(mensagemErro, ex);
+                try {
+                    logDao.inserir(mensagemErro);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }));
 
@@ -79,16 +89,15 @@ public class PedidoDao {
 
     public PedidoModel atualizar(PedidoModel pedido) throws SQLException {
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(" update Pedidos set ");
-        sb.append("   codigo_cliente = ? ");
-        sb.append(" , valor_total = ? ");
-        sb.append(" , numero_cartao = ? ");
-        sb.append(" , data = ? ");
-        sb.append(" where codigo = ? ");
+        String sb = " update Pedidos set " +
+                "   codigo_cliente = ? " +
+                " , valor_total = ? " +
+                " , numero_cartao = ? " +
+                " , data = ? " +
+                " where codigo = ? ";
 
         int idx = 1;
-        PreparedStatement pst = connection.prepareStatement(sb.toString());
+        PreparedStatement pst = connection.prepareStatement(sb);
         pst.setInt(idx++, pedido.getCliente().getCodigoCliente());
         pst.setBigDecimal(idx++, pedido.getValorTotal());
         pst.setString(idx++, pedido.getNumeroCartao());
@@ -105,21 +114,20 @@ public class PedidoDao {
 
     public Optional<PedidoModel> buscaPorCodigo(Integer codigoQry) throws SQLException {
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(" select codigo ");
-        sb.append("      , codigo_cliente ");
-        sb.append("      , valor_total ");
-        sb.append("      , numero_cartao ");
-        sb.append("      , data ");
-        sb.append(" from pedidos ");
-        sb.append(" where codigo = ?");
-
-        // TODO criar tabela clientes e relacionar com o pedido, e fazer um JOIN acima pra trazer o cliente
+        String sb = " select p.codigo " +
+                "      , p.codigo_cliente " +
+                "      , c.nome " +
+                "      , p.valor_total " +
+                "      , p.numero_cartao " +
+                "      , p.data " +
+                " from pedidos p " +
+                " left join clientes c on p.codigo_cliente=c.codigo " +
+                " where p.codigo = ? " +
+                " order by p.codigo ";
 
         int idx = 1;
-        PreparedStatement pst = connection.prepareStatement(sb.toString());
+        PreparedStatement pst = connection.prepareStatement(sb);
         pst.setInt(idx, codigoQry);
-        // pode usar com ++ para indicar outros parametros
 
         Statement st = connection.createStatement();
         ResultSet rs = pst.executeQuery();
@@ -128,15 +136,16 @@ public class PedidoDao {
             return Optional.empty();
         }
 
-        idx = 1;
         Integer codigo = rs.getInt(idx++);
         Integer codigoCliente = rs.getInt(idx++);
+        String nomeCliente = rs.getString(idx++);
         BigDecimal valorTotal = rs.getBigDecimal(idx++);
         String numeroCartao = rs.getString(idx++);
         Date data = rs.getDate(idx);
 
         ClienteModel cliente = ClienteModel.builder()
                 .codigoCliente(codigoCliente)
+                .nomeCliente(nomeCliente)
                 .build();
 
         PedidoModel pedido = PedidoModel.builder()

@@ -1,6 +1,6 @@
 package com.avanade.aplicacao.servicos;
 
-import com.avanade.aplicacao.dao.ItemPedidoDao;
+import com.avanade.aplicacao.dao.LogDao;
 import com.avanade.aplicacao.dao.PedidoDao;
 import com.avanade.aplicacao.model.PedidoModel;
 import com.avanade.aplicacao.validacoes.ValidarArquivos;
@@ -19,7 +19,7 @@ public class ServicoProcessarArquivos {
     private final Path dirEntrada;
     private final List<String> lstArquivos;
     private final PedidoDao pedidoDao;
-    private final ItemPedidoDao itemPedidoDao;
+    private final LogDao logDao;
 
     public ServicoProcessarArquivos(String caminhoDirEntrada) {
         ValidarArquivos validacao = new ValidarArquivos();
@@ -28,7 +28,7 @@ public class ServicoProcessarArquivos {
 
         try {
             pedidoDao = new PedidoDao();
-            itemPedidoDao = new ItemPedidoDao();
+            logDao = new LogDao();
         } catch (SQLException ex) {
             String msg = "Ocorreu um erro ao criar DAO de pedidos";
             log.error(msg, ex);
@@ -67,8 +67,13 @@ public class ServicoProcessarArquivos {
                         throw new SQLException("Pedido não incluído, verifique seus dados");
                     }
                 } catch (SQLException ex) {
-                    log.error("Falha ao inserir pedido no banco [{}]", pedido, ex);
-                    // TODO Gerar lista de erro e criar um arquivo
+                    String mensagemErro = "Falha ao inserir pedido no banco [" + pedido + "]";
+                    log.error(mensagemErro, ex);
+                    try {
+                        logDao.inserir(mensagemErro);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 }
             }));
 
