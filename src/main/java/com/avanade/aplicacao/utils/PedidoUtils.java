@@ -68,7 +68,7 @@ public final class PedidoUtils {
         }
     }
 
-    public static Optional<ItemPedidoModel> criarItemPedido(String... campos) {
+    public static Optional<ItemPedidoModel> criarItemPedido(int codigoPedido, String... campos) {
         if (campos.length != TAMANHO_CAMPOS_ITEMPEDIDO) {
             return Optional.empty();
         }
@@ -76,6 +76,7 @@ public final class PedidoUtils {
         try {
             IdxItem idxitem = new IdxItem();
             ItemPedidoModel itempedido = ItemPedidoModel.builder()
+                    .codigo(codigoPedido)
                     .codigoProduto(Integer.valueOf(campos[idxitem.inc()]))
                     .quantidade(new BigDecimal(campos[idxitem.inc()]))
                     .nomeProduto(campos[idxitem.inc()])

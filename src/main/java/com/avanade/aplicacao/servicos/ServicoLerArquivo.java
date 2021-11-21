@@ -42,6 +42,9 @@ public class ServicoLerArquivo {
 
         List<PedidoModel> pedidos = new ArrayList<>();
         PedidoModel pedidoCorrente = null;
+        List<ItemPedidoModel> itensPedido = new ArrayList<>();
+
+        String ultimaLinha = linhas.get(linhas.size() - 1);
 
         for (String linha : linhas) {
 
@@ -52,25 +55,43 @@ public class ServicoLerArquivo {
 
             if (campos[0].equals("C")) {
 
+                if (itensPedido.size() > 0) {
+                    itensPedido = gravaPedido(pedidos, pedidoCorrente, itensPedido);
+                }
+
                 Optional<PedidoModel> pedidoOpt = PedidoUtils.criarPedido(campos);
                 if (pedidoOpt.isEmpty()) {
                     continue;
                 }
-
                 pedidoCorrente = pedidoOpt.get();
-                pedidos.add(pedidoCorrente);
-                continue;
+
             } else if (campos[0].equals("D")) {
 
-                // TODO Criar lista de itens do pedido
-                Optional<ItemPedidoModel> itempedidoOpt = PedidoUtils.criarItemPedido(campos);
+                Optional<ItemPedidoModel> itempedidoOpt =
+                        PedidoUtils.criarItemPedido(pedidoCorrente.getCodigo(), campos);
+                if (itempedidoOpt.isEmpty()) {
+                    continue;
+                }
 
-                continue;
+                itensPedido.add(itempedidoOpt.get());
+
+                if (linha.equals(ultimaLinha)) {
+                    itensPedido = gravaPedido(pedidos, pedidoCorrente, itensPedido);
+                }
 
             }
 
         }
 
         return pedidos;
+    }
+
+    private List<ItemPedidoModel> gravaPedido(List<PedidoModel> pedidos, PedidoModel pedidoCorrente, List<ItemPedidoModel> itensPedido) {
+        if (pedidoCorrente != null) {
+            pedidoCorrente.setItens(itensPedido);
+            pedidos.add(pedidoCorrente);
+            itensPedido = new ArrayList<>();
+        }
+        return itensPedido;
     }
 }

@@ -1,5 +1,6 @@
 package com.avanade.aplicacao.servicos;
 
+import com.avanade.aplicacao.dao.ItemPedidoDao;
 import com.avanade.aplicacao.dao.PedidoDao;
 import com.avanade.aplicacao.model.PedidoModel;
 import com.avanade.aplicacao.validacoes.ValidarArquivos;
@@ -18,6 +19,7 @@ public class ServicoProcessarArquivos {
     private final Path dirEntrada;
     private final List<String> lstArquivos;
     private final PedidoDao pedidoDao;
+    private final ItemPedidoDao itemPedidoDao;
 
     public ServicoProcessarArquivos(String caminhoDirEntrada) {
         ValidarArquivos validacao = new ValidarArquivos();
@@ -26,6 +28,7 @@ public class ServicoProcessarArquivos {
 
         try {
             pedidoDao = new PedidoDao();
+            itemPedidoDao = new ItemPedidoDao();
         } catch (SQLException ex) {
             String msg = "Ocorreu um erro ao criar DAO de pedidos";
             log.error(msg, ex);
@@ -58,7 +61,6 @@ public class ServicoProcessarArquivos {
             pedidos.forEach((pedido -> {
                 try {
                     pedidoDao.inserir(pedido);
-                    // TODO Inserir itens, criar DAO do ItemPedido, e fazer a inserção
 
                     Optional<PedidoModel> novoPedido = pedidoDao.buscaPorCodigo(pedido.getCodigo());
                     if (novoPedido.isEmpty()) {

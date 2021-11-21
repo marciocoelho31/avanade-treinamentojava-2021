@@ -14,9 +14,11 @@ import java.util.Properties;
 public class PedidoDao {
 
     private Connection connection;
+    private final ItemPedidoDao itemPedidoDao;
 
     public PedidoDao() throws SQLException {
         connection = criarConexao();
+        itemPedidoDao = new ItemPedidoDao();
         log.info("Conexão executada com sucesso");
     }
 
@@ -30,8 +32,14 @@ public class PedidoDao {
 
     public PedidoModel inserir(PedidoModel pedido) throws SQLException {
 
+        Optional<PedidoModel> pedidoQry = buscaPorCodigo(pedido.getCodigo());
+        if (!pedidoQry.isEmpty()) {
+            atualizar(pedido);
+            return pedido;
+        }
+
         StringBuilder sb = new StringBuilder();
-        sb.append(" insert into pedidos ");
+        sb.append(" insert into Pedidos ");
         sb.append("      ( codigo ");
         sb.append("      , codigo_cliente ");
         sb.append("      , valor_total ");
@@ -50,21 +58,48 @@ public class PedidoDao {
         pst.setInt(idx++, pedido.getCliente().getCodigoCliente());
         pst.setBigDecimal(idx++, pedido.getValorTotal());
         pst.setString(idx++, pedido.getNumeroCartao());
-        pst.setDate(idx, (java.sql.Date) pedido.getData());
-
-        // TODO se o pedido ja existir, chamar o metodo 'atualizar' abaixo
-        // if antes consultando pelo codigo
+        pst.setDate(idx, new java.sql.Date(pedido.getData().getTime()));
 
         int qtdLinhas = pst.executeUpdate();
         if (qtdLinhas == 0) {
             throw new SQLException("Nenhum registro foi inserido para o pedido []");
         }
 
-        return pedido;
+        pedido.getItens().forEach((itemPedido -> {
+            try {
+                itemPedidoDao.inserir(itemPedido);
+            } catch (SQLException ex) {
+                log.error("Falha ao inserir item do pedido no banco [{}]", itemPedido, ex);
+                // TODO Alimentar lista/log de erro
+            }
+        }));
 
+        return pedido;
     }
 
-    public PedidoModel atualizar(PedidoModel pedido) {
+    public PedidoModel atualizar(PedidoModel pedido) throws SQLException {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(" update Pedidos set ");
+        sb.append("   codigo_cliente = ? ");
+        sb.append(" , valor_total = ? ");
+        sb.append(" , numero_cartao = ? ");
+        sb.append(" , data = ? ");
+        sb.append(" where codigo = ? ");
+
+        int idx = 1;
+        PreparedStatement pst = connection.prepareStatement(sb.toString());
+        pst.setInt(idx++, pedido.getCliente().getCodigoCliente());
+        pst.setBigDecimal(idx++, pedido.getValorTotal());
+        pst.setString(idx++, pedido.getNumeroCartao());
+        pst.setDate(idx++, new java.sql.Date(pedido.getData().getTime()));
+        pst.setInt(idx, pedido.getCodigo());
+
+        int qtdLinhas = pst.executeUpdate();
+        if (qtdLinhas == 0) {
+            throw new SQLException("Nenhum registro foi atualizado para o pedido []");
+        }
+
         return pedido;
     }
 
